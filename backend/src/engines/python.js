@@ -23,6 +23,7 @@ const enginePython = {
         // 2. Run flake8 (Linting) - Stop on errors? No, we want to report them.
         // 3. Run pytest (Logic/Unit Tests)
         const testCmd = `pip install -r requirements.txt flake8 pytest && 
+                         export PYTHONPATH=$PYTHONPATH:. && 
                          flake8 . --count --select=E9,F63,F7,F82,F401 --show-source --statistics && 
                          pytest`;
 

@@ -67,9 +67,12 @@ ${fileContent}
 
 Instructions:
 1. Fix ONLY the specific bug described above. Do NOT change any other logic.
-2. Do NOT modify test files — only fix the source/implementation file.
-3. Return the COMPLETE corrected content of "${issue.file}" — nothing else.
-4. No explanation, no markdown fences, just the raw corrected code.
+2. Do NOT modify test files unless the error is clearly an import path issue in the test itself.
+3. If this is a ModuleNotFoundError or Import Error:
+    - You MAY create/add a missing __init__.py file if needed (return its content).
+    - You MAY correct relative imports.
+4. Return the COMPLETE corrected content of "${issue.file}" — nothing else.
+5. No explanation, no markdown fences, just the raw corrected code.
 `;
 
             const response = await model.invoke([new HumanMessage(prompt)]);

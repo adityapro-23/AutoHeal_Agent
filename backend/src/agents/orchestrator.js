@@ -135,16 +135,47 @@ async function startOrchestrator(repoUrl, teamName, leaderName) {
         updateFrontend({ logs: [...outputLog] });
 
         const discovered = await analyzeOutput(runResult.output, localPath);
-        const newIssues = discovered.filter(iss => !addressedKeys.has(`${iss.file}::${iss.type}::${iss.line}`));
 
-        console.log(`[Orchestrator] Iter ${i}: ${discovered.length} found, ${newIssues.length} unfixed.`);
+        // Filter out already-addressed issues BUT check for persistence
+        const newIssues = [];
+        const reOpenedIssues = [];
 
-        if (newIssues.length === 0) {
+        for (const disc of discovered) {
+            const keys = [`${disc.file}::${disc.type}::${disc.line}`, `${disc.file}::${disc.type}::0`]; // fuzzy match line 0
+
+            // Check if this issue was supposedly FIXED
+            const existingFixed = currentLog.issues.find(iss =>
+                (keys.includes(`${iss.file}::${iss.type}::${iss.line}`)) && iss.status === 'FIXED'
+            );
+
+            if (existingFixed) {
+                // IT CAME BACK! Re-open it.
+                console.log(`[Orchestrator] Issue reappeared: ${disc.file}::${disc.type}`);
+                existingFixed.status = 'OPEN';
+                existingFixed.description += " [NOTE: Previous fix failed. Try a different approach.]";
+                reOpenedIssues.push(existingFixed);
+            } else if (!addressedKeys.has(`${disc.file}::${disc.type}::${disc.line}`)) {
+                // Truly new issue
+                newIssues.push(disc);
+            }
+        }
+
+        console.log(`[Orchestrator] Iter ${i}: ${discovered.length} found. New: ${newIssues.length}, Re-opened: ${reOpenedIssues.length}`);
+
+        if (newIssues.length === 0 && reOpenedIssues.length === 0) {
             // All known issues are fixed but tests still fail — could be residual or env issue
-            outputLog.push(`⚠ All known issues already fixed but tests still fail.`);
-            outputLog.push(`This may be a deeper issue requiring manual review.`);
+            outputLog.push(`⚠ All known issues marked fixed, but tests still failing.`);
+            outputLog.push(`This requires manual review or structural changes.`);
             updateFrontend({ logs: [...outputLog] });
             break;
+        }
+
+        if (reOpenedIssues.length > 0) {
+            outputLog.push(`⚠ ${reOpenedIssues.length} issue(s) reappeared after fix. Re-opening...`);
+        }
+
+        if (newIssues.length > 0) {
+            outputLog.push(`Found ${newIssues.length} new issue(s).`);
         }
 
         outputLog.push(`Found ${newIssues.length} issue(s) to fix:`);
