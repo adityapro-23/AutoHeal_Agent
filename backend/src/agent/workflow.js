@@ -63,30 +63,93 @@ async function runTests(state) {
     const { localPath, iteration } = state;
     console.log(`Running tests (Iteration ${iteration})...`);
 
-    // Auto-discover test command & image
-    let testCmd = 'npm install && npm test';
-    let imageName = 'node:18-alpine';
+    let outputs = [];
+    let passed = true;
+    let detectedTypes = [];
 
+    // --- Python Check ---
     if (fs.existsSync(path.join(localPath, 'requirements.txt'))) {
         console.log('Detected Python project');
-        imageName = 'python:3.9-alpine';
-        testCmd = 'pip install -r requirements.txt && pytest';
-    } else if (fs.existsSync(path.join(localPath, 'package.json'))) {
-        const pkg = JSON.parse(fs.readFileSync(path.join(localPath, 'package.json'), 'utf8'));
-        if (pkg.scripts && pkg.scripts.test) {
-            testCmd = 'npm install && npm test';
+        detectedTypes.push('Python');
+        const imageName = 'python:3.9-alpine';
+
+        // Install flake8 and run it BEFORE pytest to catch linting/syntax errors.
+        // Added F401 (unused imports) which is a common linting error in the demo.
+        const testCmd = 'pip install flake8 pytest && flake8 . --count --select=E9,F63,F7,F82,F401 --show-source --statistics && pytest';
+
+        const result = await runTestsInSandbox(localPath, testCmd, imageName);
+        outputs.push(`--- PYTHON OUTPUT ---\n${result.output}`);
+
+        // Force failure if specific Python errors are detected in output, even if exit code was 0
+        if (!result.success || (result.output.includes('SyntaxError') || result.output.includes('E999') || result.output.includes('F401'))) {
+            console.log('Detected Python errors in output.');
+            passed = false;
         }
     }
 
-    const result = await runTestsInSandbox(localPath, testCmd, imageName);
+    // --- Node.js Check ---
+    let nodeDir = null;
 
-    // ADD THIS LINE TO REVEAL THE HIDDEN ERROR:
-    console.log(`\n--- TEST OUTPUT (Iter ${iteration}) ---\n`, result.output, `\n-----------------------------------\n`);
+    // Debug: List files to understand structure
+    try {
+        console.log('Files in repo root:', fs.readdirSync(localPath));
+        if (fs.existsSync(path.join(localPath, 'frontend'))) {
+            console.log('Files in frontend/:', fs.readdirSync(path.join(localPath, 'frontend')));
+        }
+    } catch (e) { console.error('Error listing files:', e); }
+
+    if (fs.existsSync(path.join(localPath, 'package.json'))) {
+        nodeDir = '.';
+    } else if (fs.existsSync(path.join(localPath, 'frontend', 'package.json'))) {
+        nodeDir = 'frontend';
+    }
+
+    if (nodeDir) {
+        console.log(`Detected Node.js project in directory: ${nodeDir}`);
+        detectedTypes.push('Node.js');
+        const imageName = 'node:18-alpine';
+
+        let commands = ['npm install']; // 'npm ci' is better for CI but requires lockfile
+        const pkgPath = nodeDir === '.' ? path.join(localPath, 'package.json') : path.join(localPath, nodeDir, 'package.json');
+
+        try {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            if (pkg.scripts) {
+                if (pkg.scripts.test) commands.push('npm test');
+                if (pkg.scripts.lint) commands.push('npm run lint');
+                // If no test/lint, try build as a fallback to catch errors
+                if (!pkg.scripts.test && !pkg.scripts.lint && pkg.scripts.build) commands.push('npm run build');
+            }
+        } catch (e) {
+            console.error("Error reading package.json", e);
+        }
+
+        // Access via correct path inside container
+        // Container mounts repo at /app.
+        // If nodeDir is '.', command is 'npm install ...' (runs in /app)
+        // If nodeDir is 'frontend', command is 'cd frontend && npm install ...' (runs in /app/frontend)
+        let testCmd = commands.join(' && ');
+        if (nodeDir !== '.') {
+            testCmd = `cd ${nodeDir} && ${testCmd}`;
+        }
+
+        // Increase timeout for npm install? Docker default is usually fine.
+        const result = await runTestsInSandbox(localPath, testCmd, imageName);
+        outputs.push(`--- NODE.JS OUTPUT ---\n${result.output}`);
+
+        if (!result.success) {
+            console.log('Detected Node.js errors.');
+            passed = false;
+        }
+    }
+
+    const finalOutput = outputs.join('\n\n');
+    console.log(`\n--- COMBINED TEST OUTPUT (Iter ${iteration}) ---\n`, finalOutput, `\n-----------------------------------\n`);
 
     return {
-        testOutput: result.output,
-        passed: result.success,
-        logs: [...state.logs, `Tests ${result.success ? 'PASSED' : 'FAILED'} (Iteration ${iteration})`]
+        testOutput: finalOutput,
+        passed: passed,
+        logs: [...state.logs, `Tests ${passed ? 'PASSED' : 'FAILED'} (Iteration ${iteration}) - Detected: ${detectedTypes.join(', ')}`]
     };
 }
 
@@ -111,6 +174,7 @@ async function analyzeFailure(state) {
     STRICT OUTPUT FORMAT for description:
     "LINTING error in src/utils.py line 15 Fix: remove the import statement"
     "SYNTAX error in src/validator.py line 8 Fix: add the colon at the correct position"
+    "LINTING error in src/App.js line 10 Fix: 'React' is defined but never used"
     
     Test Output:
     ${testOutput}
@@ -133,59 +197,53 @@ async function analyzeFailure(state) {
 /**
  * Generates and applies fixes.
  */
+/**
+ * Generates and applies fixes.
+ */
 async function applyFixes(state) {
-    const { bugs, localPath } = state;
+    const { bugs, localPath, branchName } = state;
     const model = new ChatOpenAI({ modelName: "gpt-4-turbo", temperature: 0 });
-    let fixesApplied = [];
+    let currentIterationFixes = [];
 
     for (const bug of bugs) {
         const filePath = path.join(localPath, bug.file);
         if (!fs.existsSync(filePath)) continue;
 
         const fileContent = fs.readFileSync(filePath, 'utf8');
-
-        const prompt = `
-        Fix the following bug in the code.
-        Bug: ${bug.description}
-        File Content:
-        ${fileContent}
-        
-        Return ONLY the full corrected file content. No markdown, no comments outside code.
-        `;
+        const prompt = `Fix the bug: ${bug.description}\nCode:\n${fileContent}\nReturn ONLY the full corrected file content.`;
 
         const response = await model.invoke([new HumanMessage(prompt)]);
         const fixedContent = response.content.replace(/```[\w]*\n/g, '').replace(/```/g, '').trim();
 
         fs.writeFileSync(filePath, fixedContent);
 
-        // Commit the fix
         const repoGit = simpleGit(localPath);
         await repoGit.add(bug.file);
         await repoGit.commit(`[AI-AGENT] Fixed ${bug.type} in ${bug.file}`);
 
-        // PUSH TO REMOTE REPOSITORY
+        let pushedSuccessfully = false;
         try {
-            console.log(`Pushing branch ${state.branchName} to remote...`);
-            // We need to set upstream on the first push, and FORCE push to overwrite if branch exists
-            await repoGit.push(['-u', 'origin', state.branchName, '--force']);
-            fixesApplied.push({ ...fixesApplied[fixesApplied.length - 1], pushed: true });
+            console.log(`Pushing branch ${branchName} to remote...`);
+            await repoGit.push('origin', branchName, { '--force': null, '--set-upstream': null });
+            pushedSuccessfully = true;
         } catch (pushError) {
-            console.error(`Failed to push branch ${state.branchName}:`, pushError);
+            console.error(`Push failed:`, pushError);
         }
 
-        fixesApplied.push({
+        currentIterationFixes.push({
             file: bug.file,
             type: bug.type,
             line: bug.line,
             commitMessage: `[AI-AGENT] Fixed ${bug.type} in ${bug.file}`,
-            status: 'Fixed' // Optimistic, verification happens in next loop
+            status: 'Fixed',
+            pushed: pushedSuccessfully
         });
     }
 
     return {
-        fixesApplied: [...state.fixesApplied, ...fixesApplied],
+        fixesApplied: [...(state.fixesApplied || []), ...currentIterationFixes], // Return FULL history
         iteration: state.iteration + 1,
-        logs: [...state.logs, `Applied ${fixesApplied.length} fixes`]
+        logs: [...state.logs, `Applied ${currentIterationFixes.length} fixes`]
     };
 }
 
@@ -231,11 +289,11 @@ const workflow = new StateGraph({
             default: () => []
         },
         fixesApplied: {
-            value: (x, y) => (x || []).concat(y || []),
+            value: (x, y) => y, // Replace strategy (Node returns full state)
             default: () => []
         },
         logs: {
-            value: (x, y) => (x || []).concat(y || []),
+            value: (x, y) => y, // Replace strategy (Node returns full state)
             default: () => []
         },
         status: {
@@ -280,7 +338,6 @@ const app = workflow.compile();
 
 async function runAgent(inputs) {
     const config = { recursionLimit: 50 };
-    // Invoke the graph
     const result = await app.invoke({
         repoUrl: inputs.repoUrl,
         teamName: inputs.teamName,
@@ -290,21 +347,23 @@ async function runAgent(inputs) {
         logs: []
     }, config);
 
-    // Generate results.json
+    // If passed is true, there are 0 CURRENT failures
+    const finalFailures = result.passed ? 0 : (result.bugs ? result.bugs.length : 0);
+
     const output = {
         repoUrl: result.repoUrl,
         teamName: result.teamName,
         leaderName: result.leaderName,
         branchName: result.branchName,
-        totalFailures: result.bugs ? result.bugs.length : 0,
+        totalFailures: finalFailures, // Shows 0 if the agent fixed everything
         totalFixes: result.fixesApplied ? result.fixesApplied.length : 0,
         status: result.passed ? 'PASSED' : 'FAILED',
         logs: result.logs,
         fixes: result.fixesApplied
     };
 
+    const resultsPath = path.resolve(__dirname, '../../results.json');
     try {
-        const resultsPath = path.resolve(__dirname, '../../results.json');
         fs.writeFileSync(resultsPath, JSON.stringify(output, null, 2));
         console.log(`Results saved to ${resultsPath}`);
     } catch (e) {
