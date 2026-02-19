@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Autonomous Healing Agent Launchpad</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2b6cee",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                        "slate-custom": "#1e293b",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(43, 108, 238, 0.2);
+        }
+        .grid-bg {
+            background-image: linear-gradient(to right, rgba(43, 108, 238, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(43, 108, 238, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .glow-on-focus:focus-within {
+            box-shadow: 0 0 15px rgba(43, 108, 238, 0.4);
+            border-color: #2b6cee;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen relative overflow-x-hidden">
+<!-- Background Elements -->
+<div class="fixed inset-0 grid-bg pointer-events-none"></div>
+<div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="relative z-10 flex flex-col min-h-screen">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between px-6 py-4 md:px-12 border-b border-slate-200 dark:border-slate-800 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="p-2 bg-primary rounded-lg text-white">
+<span class="material-symbols-outlined text-2xl">auto_fix_high</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    AutoHeal <span class="text-primary">Agent</span>
+</h2>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Docs</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Pricing</a>
+<a class="text-sm font-medium hover:text-primary transition-colors" href="#">Community</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="text-sm font-medium hover:text-primary transition-colors hidden sm:block">Sign In</button>
+<button class="bg-primary text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+                    Get Started
+                </button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center justify-center px-4 py-12 md:py-20">
+<div class="max-w-4xl w-full text-center space-y-8">
+<!-- Status Badge -->
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest mb-4">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+                    AI System Online
+                </div>
+<!-- Hero Section -->
+<h1 class="text-5xl md:text-7xl font-black text-slate-900 dark:text-white leading-[1.1] tracking-tighter">
+                    Autonomous CI/CD <br/>
+<span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-500">Healing Agent</span>
+</h1>
+<p class="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-light">
+                    Identify, debug, and patch pipeline failures in real-time with AI-driven precision. Experience the future of automated DevOps.
+                </p>
+<!-- Glassmorphism Form Container -->
+<div class="mt-12 glass-panel p-8 md:p-10 rounded-2xl shadow-2xl max-w-2xl mx-auto w-full border border-white/5">
+<div class="flex flex-col gap-6">
+<div class="text-left space-y-1.5">
+<h3 class="text-lg font-bold text-white">Initialize Your Agent</h3>
+<p class="text-sm text-slate-400">Enter your repository details to begin the autonomous monitoring.</p>
+</div>
+<div class="space-y-4">
+<!-- Input: Repository -->
+<div class="group text-left space-y-2">
+<label class="text-sm font-semibold text-slate-300 ml-1">GitHub Repository URL</label>
+<div class="relative glow-on-focus rounded-xl transition-all">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500">link</span>
+<input class="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:ring-0 focus:outline-none transition-all" placeholder="https://github.com/organization/repository" type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Input: Team Name -->
+<div class="group text-left space-y-2">
+<label class="text-sm font-semibold text-slate-300 ml-1">Team Name</label>
+<div class="relative glow-on-focus rounded-xl transition-all">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500">groups</span>
+<input class="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:ring-0 focus:outline-none transition-all" placeholder="Engineering Alpha" type="text"/>
+</div>
+</div>
+<!-- Input: Leader Name -->
+<div class="group text-left space-y-2">
+<label class="text-sm font-semibold text-slate-300 ml-1">Team Leader Name</label>
+<div class="relative glow-on-focus rounded-xl transition-all">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500">person</span>
+<input class="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:ring-0 focus:outline-none transition-all" placeholder="Enter leader name..." type="text"/>
+</div>
+</div>
+</div>
+</div>
+<!-- CTA Button -->
+<button class="w-full group relative overflow-hidden bg-primary text-white rounded-xl py-5 font-bold text-lg shadow-xl shadow-primary/30 transition-all hover:scale-[1.01] active:scale-95">
+<div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+<span class="flex items-center justify-center gap-3">
+                                Start Healing Agent
+                                <span class="material-symbols-outlined animate-pulse">bolt</span>
+</span>
+</button>
+</div>
+</div>
+<!-- Integration Logos -->
+<div class="mt-16 space-y-6">
+<p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Trusted by modern engineering teams</p>
+<div class="flex flex-wrap justify-center items-center gap-8 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+<img alt="GitHub Logo" class="h-6 w-auto" data-alt="GitHub tech partner logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoZuc7c0mqFRoSgkCWhuU8HSl4TeQQWQSgUG1FYpXOzZcpgzjamU_sILbaAmlSTp8iRvsQ62fGEXoH1T9MDj0X4uBlKncaqnpLDDujWcarm57f3inzLGRyeDcnhfWDXgLwxu1tAxpp7OFE8f_IwF68bya1P9DN4YNnG6ltBgGSZgkdMEUaDbJz93N839pAegq-jKrhJvBE8VU6c_H6FfwHLNS0qMEPI6LeCKAswA0b4R20tBFP8dLek6LAdjEMj3HmWzXHukOtA31-"/>
+<img alt="GitLab Logo" class="h-6 w-auto" data-alt="GitLab tech partner logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_966_2FcuA1CMbNQyBCctX1O4BTPIjOFnyhxdTAn5102gz8Xfgmt_jZDqlBue_r75sSQX68NH0lRakNh-noBeDO08oRv4XFVOVfscVRGoaWxpUpnePrEZbCx4-gmSUP1aNO2OS-h1swLczLvq_kKXWJxQPTZrTsieF9Kmi42USjiEG0dN64vRQIzo6FCFryQucKIgMuqjgHY7h5pgOh2oWYmK9KPgHL_pZf5-EdM9_IzL1If1mL-6sW-96UL-ebT3nxBLiLMr8LfL"/>
+<img alt="Azure Logo" class="h-6 w-auto" data-alt="Azure tech partner logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXMrcEXVWHf3XJOp69k6dtJ_6egzZgTMNPbwigZQnmpmzwENkjJxMyDOgLEWd97QnJ0cPbW-xXZjgl4iaaHZB6qclhFlTw65GLBe3dEHnmZ6d4zf-ir_rck2Mcn-lqtw1PRKA92hpWEr9roIazh1HBr_oxj5teWmVaz6ykuKnox4lsMy-OXZtbV6Phl7YBeTWyU6aYnn5wEMSrincpa3KkEQBgzfjC9rynfzeatJAVVSSuf84ybbOm9JXHNapbQQVvAsoR0NV4Vcr_"/>
+<img alt="Jenkins Logo" class="h-6 w-auto" data-alt="Jenkins tech partner logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-mmprCMAxPXAQNfrcx7TwrQuzQ0qJARBwT0QiRkfnQYfJ-wX_VUMjfEGLaXkoxfP5cARaPYxdNggzt_QjxSNXLfv7nGHKpooY1kP7a8xYDLF29oVMItqsr4fRlyDZY1UGILMtjwac75_eNHHdtIGcSwAcqPnGqEl-2tFSJzfHkTxEnfmvIRYJ8Q55P8TZC5_U1MGl2USBelBbSRC7WTKfOTHgTAk9TRAADbEc1NZo_v1EhdCpWUF_H5n8Xi1mPOntWXu9Z-k9Ny8o"/>
+<img alt="CircleCI Logo" class="h-6 w-auto" data-alt="CircleCI tech partner logo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLW6VnLoyOzdnvzfVuY0iVh8N61Bsn8Xon35xrNvVJ8DsEL8M-RTIb5hlMj-9U7_ACb0DSFXJadGkPoUVf0BqvVxB5aSnu7pk9OfLnV5Fuhn16OVTSeaYvqOx1joDqefjHDBO9FxYmb2aKokU55OebPdXAOKvtIx6AJzV_kO2A3bqKl-NbgxECp4t8Hp-N2DjnXhRCodALHQdeDEyHQ8WC_tmg8IFkxFWC59PLyzaWpsz3eKWPtDrHm2uhwuYAabVIfv4uQ3rW7rst"/>
+</div>
+</div>
+</div>
+</main>
+<!-- Features Grid Footer Preview -->
+<section class="px-6 md:px-12 py-12 md:py-24 bg-slate-900/50 border-t border-slate-800/50 backdrop-blur-sm">
+<div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="p-6 space-y-4 rounded-2xl bg-slate-800/30 border border-slate-700/50">
+<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<h4 class="text-xl font-bold">Deep Log Analysis</h4>
+<p class="text-slate-400 text-sm leading-relaxed">AI parses through thousands of lines of logs to pinpoint the exact failure vector in milliseconds.</p>
+</div>
+<div class="p-6 space-y-4 rounded-2xl bg-slate-800/30 border border-slate-700/50">
+<div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-500">
+<span class="material-symbols-outlined">terminal</span>
+</div>
+<h4 class="text-xl font-bold">Autonomous Patching</h4>
+<p class="text-slate-400 text-sm leading-relaxed">Our agent suggests and applies code fixes directly to a staging branch for your review.</p>
+</div>
+<div class="p-6 space-y-4 rounded-2xl bg-slate-800/30 border border-slate-700/50">
+<div class="w-12 h-12 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+<span class="material-symbols-outlined">security</span>
+</div>
+<h4 class="text-xl font-bold">Zero-Downtime Guarantee</h4>
+<p class="text-slate-400 text-sm leading-relaxed">Prevent broken deployments before they reach production with predictive failure analysis.</p>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="px-6 md:px-12 py-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
+<p class="text-slate-500 text-sm">© 2024 AutoHeal Systems Inc. All rights reserved.</p>
+<div class="flex gap-6 text-slate-400 text-sm">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Status</a>
+</div>
+</footer>
+</div>
+</body></html>
