@@ -103,21 +103,29 @@ graph TD
 
 ## 📦 Installation & Setup
 
-### 1. Environment Configuration
+### 1. Backend Environment Configuration
 Create a `.env` file in the `/backend` folder:
 ```env
 PORT=3000
 OPENAI_API_KEY=your_key_here
 GITHUB_TOKEN=your_token_here
-HOST_WORKDIR=D:\path\to\autoheal_agent
+HOST_WORKDIR=/absolute/path/to/AutoHeal_Agent
+FRONTEND_URL=https://your-frontend.onrender.com
 ```
 
-### 2. Deploy with Docker
+### 2. Frontend Environment Configuration
+Create a `.env` file in the `/frontend` folder:
+```env
+VITE_BACKEND_URL=https://your-backend-api.com   # e.g. http://<EC2-IP>:3000
+```
+> ⚠️ In Vite, only variables prefixed with `VITE_` are exposed to the browser.
+
+### 3. Deploy Backend with Docker
 ```bash
 docker-compose up --build
 ```
 
-### 3. Frontend Setup
+### 4. Frontend Local Setup
 ```bash
 cd frontend
 npm install
@@ -126,7 +134,54 @@ npm run dev
 
 ---
 
-## 📊 Evaluation Metrics (PS3 Standards)
+## � Project Structure
+
+```
+AutoHeal_Agent/
+│
+├── docker-compose.yml              # Orchestrates backend container + Docker socket mount
+│
+├── backend/
+│   ├── Dockerfile                  # Backend container image
+│   ├── .env                        # Backend environment variables (see below)
+│   ├── package.json
+│   └── src/
+│       ├── server.js               # Express API server (routes: /api/run-agent, /api/results)
+│       │
+│       ├── agents/
+│       │   ├── auditor.js          # Agent 1: Clones repo, creates AI fix branch
+│       │   ├── orchestrator.js     # Agent 2: Healing loop, engine detection, final sanity run
+│       │   └── solver.js           # Agent 3: GPT-4-Turbo powered code fixer
+│       │
+│       └── engines/                # Language-specific test runners
+│           ├── node.js             # npm test / jest
+│           ├── python.js           # pytest with PYTHONPATH fix
+│           ├── java.js             # Maven / Gradle
+│           ├── go.js               # go test ./...
+│           └── ruby.js             # bundle exec rspec
+│
+└── frontend/
+    ├── .env                        # Frontend environment variables (see below)
+    ├── package.json
+    ├── vite.config.js
+    └── src/
+        ├── main.jsx                # App entry point
+        ├── App.jsx                 # Router (/ → Launchpad, /dashboard → ResultsDashboard)
+        ├── index.css               # Global styles + Tailwind
+        │
+        ├── components/
+        │   ├── Launchpad.jsx       # Landing page + agent launch form
+        │   ├── ResultsDashboard.jsx # Live dashboard with logs, fixes, score
+        │   └── Dashboard.jsx       # Alternate view component
+        │
+        ├── store/
+        │   └── runStore.js         # Zustand global state (status, logs, fixes, etc.)
+        │
+        └── api/
+            └── agentApi.js         # Axios calls to backend
+```
+
+## �📊 Evaluation Metrics (PS3 Standards)
 
 * **Base Score**: 100 points
 * **Speed Bonus**: +10 points for execution under 5 minutes
