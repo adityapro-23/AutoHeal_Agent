@@ -14,6 +14,7 @@ app.use(cors({
     credentials: true,
     sameSite: 'lax',
     httpOnly: true,
+    secure: true,
 }));
 app.use(express.json());
 
